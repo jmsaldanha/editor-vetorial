@@ -7,3 +7,8 @@ target/
 .project
 .classpath
 .DS_Store
+executar_log.txt
+
+# arquivos locais (nao vao para o repositorio)
+docs/Documentacao_Editor_Vetorial.pdf
+executar.bat
