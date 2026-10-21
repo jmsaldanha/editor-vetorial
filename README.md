@@ -1,119 +1,137 @@
 # Editor de Desenho Vetorial Interativo (JavaFX)
 
-Avaliação Prática **N3** – Programação Orientada a Objetos 1
+**Prova N2** – Programação Orientada a Objetos 1
 Universidade de Rio Verde (UniRV) – Engenharia de Software – Semestre 2026/1
 Docente: Prof. Me. Sergio Souza Novak
+Aluno: **João Marcos**
 
-Software desktop para criação, edição e persistência de formas geométricas 2D
-sobre uma tela interativa, aplicando padrões GoF (State, Prototype, Memento/Command,
-Composite) e separação em camadas Models / Controller / Views.
+Editor de desenho para computador que permite criar, editar, transformar e salvar
+formas geométricas 2D (polígonos, quadrados, círculos e hexágonos) numa tela interativa.
+O projeto aplica os padrões de projeto **State**, **Prototype**, **Memento/Command** e
+**Composite**, e é dividido nas camadas **Models**, **Controller** e **Views**.
 
-O diagrama de classes UML está em [`docs/diagrama_classes.pdf`](docs/diagrama_classes.pdf).
+- Repositório: https://github.com/jmsaldanha/editor-vetorial
+- Diagrama de classes UML: [`docs/diagrama_classes.pdf`](docs/diagrama_classes.pdf)
 
 ---
 
-## Requisitos técnicos
+## Tecnologias
 
-| ID   | Requisito        | Atendimento                                              |
-|------|------------------|----------------------------------------------------------|
-| RT01 | Linguagem        | Java 17 (`maven.compiler.release = 17`)                  |
-| RT02 | Interface gráfica| JavaFX 21 (código programático, sem FXML)                |
-| RT03 | Gerenciador      | Apache Maven (`pom.xml`)                                 |
-| RT04 | Persistência     | JSON (biblioteca Gson)                                   |
-| RT05 | Patterns         | State, Prototype, Memento (+ Command e Composite)        |
-| RT06 | Arquitetura      | Pacotes `Models`, `Controller` e `Views`                 |
+| Item              | Usado no projeto                                                   |
+|-------------------|--------------------------------------------------------------------|
+| Linguagem         | Java 17 ou superior (desenvolvido e testado com o **JDK 26**)      |
+| Interface gráfica | JavaFX 21, montada por código (sem FXML)                           |
+| Build             | Apache Maven (`pom.xml`)                                           |
+| Salvamento        | Arquivos JSON, com a biblioteca Gson                               |
+| IDE utilizada     | IntelliJ IDEA (também abre no VS Code, Eclipse ou NetBeans)        |
+
+> O `pom.xml` compila para Java 17 (`release 17`). Assim o projeto roda em qualquer
+> JDK a partir do 17, inclusive no JDK 26 usado no desenvolvimento.
+> O JavaFX e o Gson são baixados automaticamente pelo Maven: não é preciso instalar nada além do JDK.
+
+---
 
 ## Como executar
 
-Pré-requisitos: **JDK 17+** e **Maven 3.8+** (as dependências do JavaFX são baixadas pelo Maven).
+### IntelliJ IDEA (recomendado)
+
+1. **File › Open** e escolha a pasta do projeto (a que contém o `pom.xml`). Clique em **Trust Project**.
+2. Espere o IntelliJ importar o Maven (barra de progresso no canto inferior).
+3. Em **File › Project Structure › Project**, selecione um JDK 17 ou superior.
+4. Abra a aba **Maven** (lado direito) › **editor-vetorial › Plugins › javafx** e dê dois cliques em **javafx:run**.
+
+> Não execute pelo botão ▶ do método `main`: como o JavaFX é um módulo separado do Java,
+> isso causa o erro *"JavaFX runtime components are missing"*. Use sempre o **javafx:run**.
+
+### Terminal (com Maven instalado)
 
 ```bash
 mvn clean javafx:run
 ```
 
-Para apenas compilar: `mvn clean compile`.
+---
+
+## Funcionalidades
+
+| Recurso                   | Como usar                                                                          |
+|---------------------------|------------------------------------------------------------------------------------|
+| Linha Livre (polígono)    | Clique para adicionar vértices; **duplo clique**, **botão direito** ou **ENTER** finaliza; **ESC** cancela |
+| Inserir Quadrado / Círculo / Hexágono | Pressione no centro e arraste para definir o tamanho (clique simples = raio 50) |
+| Selecionar                | Clique seleciona (SHIFT soma/remove); arraste a forma para mover; arraste no vazio para a caixa de seleção |
+| Escalar / Rotacionar / Cisalhar | Arraste com a ferramenta escolhida (em torno do centro da forma ou do grupo) |
+| Editar Vértice            | Clique na forma e arraste um dos vértices (pontos vermelhos)                       |
+| Excluir                   | Ferramenta Excluir (clique na forma) ou tecla **Delete** na seleção                |
+| Estilos                   | Cor de preenchimento, cor da borda e espessura da borda                            |
+| Grade Magnética           | Encaixa as coordenadas numa grade de 20 px                                         |
+| Camadas                   | Trazer para frente / Enviar para trás                                              |
+| Grupos                    | Agrupar / Desagrupar: formas agrupadas são movidas e transformadas juntas          |
+| Desfazer / Refazer        | **Ctrl+Z** / **Ctrl+Y** (ou botões da barra lateral)                               |
+| Salvar / Carregar         | **Ctrl+S** / **Ctrl+O**, em arquivo `.json`                                         |
+| Barra de status           | Coordenadas do mouse, total de formas, área e perímetro em tempo real              |
 
 ---
 
-## Estrutura de pacotes
+## Estrutura do projeto
 
 ```
 src/main/java/org/example
-├── Models
-│   ├── FormaGeometrica.java      «interface» contrato das formas (Listing 1)
-│   ├── FormaBase.java            «abstract» implementações base (área, perímetro, transformações)
-│   ├── Ponto.java                vértice (x, y)
-│   ├── Poligono.java             polígono livre (mínimo 3 pontos)
-│   ├── Quadrado.java             extends Poligono – vértices calculados automaticamente
-│   ├── Circulo.java              extends FormaBase – raio > 0
-│   └── Hexagono.java             extends FormaBase – vértices calculados automaticamente
-├── Controller
-│   ├── EditorContext.java        Contexto do State + seleção/agrupamento (Composite)
-│   ├── HistoricoController.java  Desfazer/Refazer (Memento/Command)
-│   ├── Ferramenta.java           «interface» Estado
-│   ├── FerramentaDesenhar.java   "Linha Livre": polígonos por cliques
-│   ├── FerramentaSelecionar.java seleção, caixa de seleção e translação
-│   ├── FerramentaTransformar.java escalar / rotacionar / cisalhar / excluir
-│   ├── ModoFerramenta.java       modos da FerramentaTransformar
-│   ├── FerramentaInserirForma.java quadrado, círculo e hexágono por arrasto
-│   └── FerramentaEditarVertice.java arrasto de vértices
-└── Views
-    ├── ContainerApp.java         janela principal, canvas, renderização e persistência
-    ├── BarraLateralView.java     estilos, ferramentas, formas, camadas e sistema
-    └── PainelStatusView.java     coordenadas, total de formas, área e perímetro
+├── Models        → dados e matemática das formas
+│   ├── FormaGeometrica.java   interface (contrato das formas)
+│   ├── FormaBase.java         classe abstrata: área, perímetro, centroide e transformações
+│   ├── Ponto.java             vértice (x, y)
+│   ├── Poligono.java          polígono livre (mínimo 3 pontos)
+│   ├── Quadrado.java          vértices calculados a partir do centro e do raio
+│   ├── Circulo.java           raio obrigatoriamente maior que zero
+│   └── Hexagono.java          vértices calculados a partir do centro e do raio
+├── Controller    → regras de interação
+│   ├── EditorContext.java          estado do editor, seleção, grupos e camadas
+│   ├── HistoricoController.java    desfazer / refazer
+│   ├── Ferramenta.java             interface das ferramentas (State)
+│   ├── FerramentaDesenhar.java     Linha Livre
+│   ├── FerramentaSelecionar.java   seleção e movimentação
+│   ├── FerramentaTransformar.java  escalar, rotacionar, cisalhar e excluir
+│   ├── ModoFerramenta.java         modos da FerramentaTransformar
+│   ├── FerramentaInserirForma.java quadrado, círculo e hexágono
+│   └── FerramentaEditarVertice.java arrastar vértices
+└── Views         → interface gráfica
+    ├── ContainerApp.java       janela principal, desenho do canvas e salvar/carregar
+    ├── BarraLateralView.java   barra lateral com estilos e ferramentas
+    └── PainelStatusView.java   barra de status
 ```
+
+---
 
 ## Padrões de projeto
 
-- **State** – `EditorContext` guarda a `ferramentaAtual` (interface `Ferramenta`). O canvas
-  apenas repassa os eventos `aoPressionarMouse`, `aoArrastarMouse`, `aoSoltarMouse` e
-  `aoClicar` ao estado ativo; trocar de ferramenta na barra lateral troca o estado,
-  sem condicionais na View.
-- **Memento / Command** – antes de cada ação que altera o desenho, `registrarEstado`
-  empilha uma cópia profunda da lista de formas no `undoStack`. `desfazer` e `refazer`
-  movimentam os estados entre `undoStack` e `redoStack` (limite de 100 estados).
-- **Prototype** – `FormaGeometrica.clonar()` gera cópias profundas (pontos, estilo e
-  groupId), sem compartilhar referências. É usado pelo histórico.
-- **Composite** – formas com o mesmo `groupId` são selecionadas juntas e translação,
-  escala, rotação e cisalhamento são aplicados em torno do centro do grupo, como se
-  fossem uma única forma.
+- **State:** cada ferramenta é uma classe que implementa `Ferramenta`. O `EditorContext`
+  guarda a ferramenta ativa, e a tela só repassa os eventos do mouse para ela. Trocar de
+  ferramenta é trocar o objeto, sem `if/else` na interface.
+- **Memento / Command:** antes de cada alteração, o `HistoricoController` guarda uma cópia
+  do desenho numa pilha (`undoStack`). Desfazer e refazer movem esses estados entre as
+  pilhas `undoStack` e `redoStack` (limite de 100 estados).
+- **Prototype:** `clonar()` cria uma cópia profunda de cada forma (pontos, estilo e grupo),
+  usada pelo histórico para que as cópias não mudem junto com o desenho.
+- **Composite:** formas com o mesmo `groupId` são selecionadas juntas e transformadas em
+  volta do centro do grupo, como se fossem uma única forma.
 
-## Regras de negócio implementadas
+---
 
-- Polígono precisa de **no mínimo 3 pontos** (desenhos com menos são descartados e
-  arquivos com menos são rejeitados como corrompidos).
-- Círculo, quadrado e hexágono exigem **raio estritamente positivo** (`IllegalArgumentException`).
-- Quadrado e hexágono **calculam seus vértices automaticamente**.
-- **Área** pela fórmula de Gauss; **perímetro** pela soma das distâncias euclidianas.
-- **Translação** soma `dx`/`dy`; **escala** multiplica a distância ao centroide;
-  **rotação** em radianos em torno do centroide; **cisalhamento** em torno do centroide.
-- Cores validadas no formato `#RRGGBB`; espessura de borda positiva.
-- O círculo é representado por 72 vértices sobre a circunferência, o que permite
-  aplicar todas as transformações (inclusive cisalhamento e edição de vértices).
+## Regras e cálculos
 
-## Uso
+- Polígono válido tem **no mínimo 3 pontos**.
+- Círculo, quadrado e hexágono exigem **raio maior que zero**.
+- **Área** pela fórmula de Gauss (fórmula do cadarço).
+- **Perímetro** pela soma das distâncias euclidianas entre vértices consecutivos.
+- **Translação** soma `dx` e `dy`. **Escala** multiplica a distância de cada ponto ao centroide.
+  **Rotação** é feita em radianos, em torno do centroide. **Cisalhamento** também é feito em torno do centroide.
+- Cores no formato `#RRGGBB` e espessura de borda positiva são validadas.
 
-| Ferramenta / ação     | Como usar                                                                 |
-|-----------------------|---------------------------------------------------------------------------|
-| Linha Livre           | Clique para adicionar vértices; **duplo clique**, **botão direito** ou **ENTER** finaliza; **ESC** cancela |
-| Selecionar            | Clique seleciona (SHIFT soma/remove); arraste a forma para mover; arraste no vazio para caixa de seleção |
-| Escalar               | Arraste afastando/aproximando do centro da forma                          |
-| Rotacionar            | Arraste em volta do centro da forma                                       |
-| Cisalhar              | Arraste na horizontal (shx) e/ou vertical (shy)                           |
-| Excluir               | Clique na forma                                                           |
-| Editar Vértice        | Clique na forma (vértices em vermelho) e arraste um vértice               |
-| Inserir Quadrado/Círculo/Hexágono | Pressione no centro e arraste para definir o raio (clique simples = raio 50) |
-| Grade Magnética       | Arredonda as coordenadas para a grade de 20 px                            |
-| Camadas/Grupo         | Trazer p/ frente, enviar p/ trás, agrupar e desagrupar a seleção          |
-| Atalhos               | Ctrl+Z desfazer · Ctrl+Y / Ctrl+Shift+Z refazer · Ctrl+S salvar · Ctrl+O carregar · Delete exclui seleção |
+---
 
-A barra de status mostra as coordenadas do cursor, o total de formas e a área/perímetro
-das formas selecionadas (ou da forma em construção) em tempo real.
+## Salvamento (JSON) e tratamento de erros
 
-## Persistência e tratamento de erros
-
-Os desenhos são salvos em **JSON** com as configurações do canvas e a lista de formas
-(tipo, estilo, coordenadas e groupId):
+O desenho é salvo em JSON com as configurações do canvas e a lista de formas
+(tipo, cores, espessura, pontos e grupo):
 
 ```json
 {
@@ -126,7 +144,6 @@ Os desenhos são salvos em **JSON** com as configurações do canvas e a lista d
       "corPreenchimento": "#D3D3D3",
       "corBorda": "#000000",
       "espessuraBorda": 1.0,
-      "groupId": "5f1c...",
       "pontos": [ {"x": 50.0, "y": 50.0}, {"x": 150.0, "y": 50.0},
                   {"x": 150.0, "y": 150.0}, {"x": 50.0, "y": 150.0} ]
     }
@@ -134,10 +151,8 @@ Os desenhos são salvos em **JSON** com as configurações do canvas e a lista d
 }
 ```
 
-- Leitura e escrita protegidas por `try-catch`. Arquivos corrompidos (JSON inválido,
-  campos ausentes, tipo desconhecido, cor inválida, polígono com menos de 3 pontos...)
-  exibem um **alerta gráfico explicativo** e o desenho atual é mantido, sem interromper
-  a aplicação.
-- Ao **fechar** o editor (ou carregar outro arquivo) com alterações não salvas, o
-  usuário é alertado e pode **Salvar**, **Não salvar** ou **Cancelar**. A barra de título
-  exibe `*` enquanto houver alterações pendentes.
+- Leitura e escrita ficam dentro de `try-catch`. Se o arquivo estiver corrompido, aparece
+  um alerta explicando o problema e o desenho atual é mantido, sem fechar o programa.
+- Ao fechar o editor (ou abrir outro arquivo) com alterações não salvas, o programa pergunta
+  se deseja **Salvar**, **Não salvar** ou **Cancelar**. Enquanto houver alterações pendentes,
+  o título da janela mostra `*`.
